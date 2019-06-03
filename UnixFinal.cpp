@@ -19,11 +19,6 @@ struct execution {
 	vector<string> argv;
 };
 
-void eclear(execution &exec);//clear CMD and ARGV
-void print(execution exec);// print CMD and ARGV
-void getdir(string change_dir, string &orign_dir, int cd_case);// deal with "cd"
-bool ispipe(execution exec, int start);//check it is pipe or not
-bool isrd(execution exec);//check it is redirect or not
 void dopipe(execution exec);//execute pipe
 void read_pipe(vector<string> p, int fd[][2], int pipe_num);//pipe type only read
 void read_write_pipe(vector<string> p, int fd[][2], int pipe_num);//pipe type both read and write
@@ -134,87 +129,7 @@ int main()
 	}
 }
 
-void print(execution exec)// print CMD and ARGV
-{
-	int  childpid;
-	char* buf[100];
-	int  i = 0;
-	string errorstr = "** ERROR: (" + exec.cmd + ") exec child process failed";
-	buf[0] = (char*)exec.cmd.c_str();
-	for(; i < exec.argv.size(); i++){
-		buf[i+1] = (char*)exec.argv[i].c_str();
-	}
-	buf[i + 1] = NULL;
 
-	if  (fork() == 0){  //child process  
-		if(execvp((char*)exec.cmd.c_str(), buf) < 0){//system call to execute cmd and argv
-			cerr << errorstr << endl;
-			exit(0);
-		}
-	} 
-	else {  
-	    //parent process  
-		wait(&childpid);
-	}  
-}
-void eclear(execution &exec) // clear CMD and ARGV
-{
-	exec.cmd.clear();
-	exec.argv.clear();
-}
-
-void getdir(string change_dir, string &orign_dir, int cd_case)
-{
-	if(cd_case == 1){// cd ..
-		int i;
-		string check;
-
-		for( i = (orign_dir.size() - 1); i >= 0; i--){
-			if(orign_dir[i] == '/') break;
-		}
-
-		check.push_back('/');
-		for( int j = 1; j < i; j++){
-			check.push_back(orign_dir[j]);
-		}
-
-		if(chdir(check.c_str()) == 0){
-			orign_dir = check;
-		}
-		
-	}
-	else if(cd_case == 2){// cd /XXXX/XXXX
-		if(chdir(change_dir.c_str()) == 0){
-			orign_dir = change_dir;
-		}
-	}
-	else{// cd XXXX
-		string check;
-		check = orign_dir + '/' + change_dir;
-		if(chdir(check.c_str()) == 0){
-			orign_dir = check;
-		}
-	}
-}
-
-bool ispipe(execution exec, int start)
-{
-	for(int i = start; i < exec.argv.size(); i++)
-		if(exec.argv[i] == "|")
-			return true;
-		
-	return false;
-}
-
-bool isrd(execution exec)
-{
-	if(exec.cmd == ">" || exec.cmd == "<" || exec.cmd == ">>") return true;
-	for(int i = 0; i < exec.argv.size(); i++)
-		if(exec.argv[i] == ">" || exec.argv[i] == "<" || exec.argv[i] == ">>")
-			return true;
-
-	return false;
-}
 void dopipe(execution exec)
 {
 	vector<string> p;
